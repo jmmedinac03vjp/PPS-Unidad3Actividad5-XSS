@@ -80,6 +80,7 @@ Con esto, un atacante podría robar sesiones de usuarios.
 
 ![](images/xss4.png)
 
+Puedes investigar más en <https://github.com/TheWation/PhpCookieStealer/tree/master>
 ### **Mitigación**
 ---
 **Uso de filter_input() para filtrar caracteres.**
