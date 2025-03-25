@@ -190,7 +190,7 @@ solo se quiere texto sin etiquetas HTML:
 
 Elimina etiquetas HTML completamente. Útil si no quieres permitir texto enriquecido (bold, italic, etc.).
 
-Si en cambio si se quiere permitir algunas etiquetas (por ejemplo, <b> y <i>), se puede hacer:
+Si en cambio si se quiere permitir algunas etiquetas (por ejemplo, \<b\> y \<i\>), se puede hacer:
 
 `$comment = strip_tags($_POST['comment'], '<b><i>');`
 
@@ -200,7 +200,7 @@ Actualmente, cualquiera podría enviar comentarios en el formulario con una soli
 
 Para prevenir esto, se puede generar un token CSRF y verificarlo antes de procesar el comentario.
 
-En la [proxima actividad sobre ataques CSRF]() lo veremos más detenidamente.
+En la [proxima actividad sobre ataques CSRF](https://github.com/jmmedinac03vjp/PPS-Unidad3Actividad6-CSRF) lo veremos más detenidamente.
 
 _Generar y almacenar el token en la sesión_
 ~~~
