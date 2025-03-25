@@ -28,7 +28,7 @@ Tipos de XSS:
 
 Vamos realizando operaciones:
 
-**Código vulnerable**
+###**Código vulnerable**
 ---
 Crear el archivo vulnerable comment.php:
 
@@ -49,7 +49,7 @@ el usuario envía el formulario, el comentario ingresado se muestra en la pantal
 
 ![](files/xss1.png)
 
-**Explotación de XSS**
+###**Explotación de XSS**
 ---
 
 Abrir el navegador y acceder a la aplicación: <http://localhost/comment.php>
@@ -75,21 +75,185 @@ Con esto, un atacante podría robar sesiones de usuarios.
 
 ![](files/xss4.png)
 
-**Mitigación**
+###**Mitigación**
 ---
- Sanitizar la entrada con htmlspecialchars()
+** Uso de filter_input() para filtrar caracteres.**
+
+Filtra caracteres problemáticos.
+
+Crea el documento comment1.php con el siguiente contenido:
+
 ~~~
-$comment = htmlspecialchars($_POST['comment'], ENT_QUOTES, 'UTF-8');
-echo "Comentario publicado: " . $comment;
+<?php
+function filter_string_polyfill(string $string): string
+{
+    // Elimina caracteres nulos y etiquetas HTML
+    $str = preg_replace('/\x00|<[^>]*>?/', '', $string);
+    // Sustituye comillas por entidades HTML
+    return str_replace(["'", '"'], ['&#39;', '&#34;'], $str);
+}
+
+// Verificar si el comentario ha sido enviado
+if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    // Obtener y sanitizar el comentario
+    $comment = filter_string_polyfill($_POST['comment'] ?? ''); // Usamos '??' para manejar el caso de que no se haya enviado ningún comentario
+    $comment = htmlspecialchars($comment, ENT_QUOTES, 'UTF-8');
+
+    // Validación
+    if (!empty($comment) && strlen($comment) <= 500) {
+        echo "Comentario publicado: " . $comment;
+    } else {
+        echo "Error: El comentario no puede estar vacío y debe tener máximo 500 caracteres.";
+    }
+}
+?>
+
+<form method="post">
+    <label for="comment">Comentario:</label>
+    <input type="text" name="comment" id="comment">
+    <button type="submit">Enviar</button>
+</form>
 ~~~
+![](files/xss5.png)
+
+Creamos una función filter_string_polyfill que nos va a eliminar todos los caracteres nulos y nos cambia caracteres conflictivos.
+
+**Sanitizar la entrada con htmlspecialchars()**
+---
 htmlspecialchars() convierte caracteres especiales en texto seguro:
 - <script> → &lt;script&gt;
 - " → &quot;
 - ' → &#39;
 Con esta corrección, el intento de inyección de JavaScript se mostrará como texto en lugar de ejecutarse.
 
-![](files/xss1.png)
-![](files/xss1.png)
+Crea un archivo comment2.php con el siguiente contenido 
+~~~
+<?php
+if (isset($_POST['comment'])) {
+	$comment = htmlspecialchars($_POST['comment'], ENT_QUOTES, 'UTF-8');
+	echo "Comentario publicado: " . $comment;
+}
+?>
+<form method="post">
+	<input type="text" name="comment">
+	<button type="submit">Enviar</button>
+</form>
+~~~
+
+![](files/xss5.png)
+
+Aunque usar htmlspecialchars() es una buena medida para prevenir ataques XSS, todavía se puede mejorar la
+seguridad y funcionalidad del código con los siguientes puntos:
+
+**Validación de entrada**
+Actualmente, el código permite que el usuario envíe cualquier contenido, incluyendo texto vacío o datos
+demasiado largos. Puedes agregar validaciones para asegurarte de que el comentario sea adecuado:
+
+Crea un archivo comment3.php con el siguiente contenido:
+~~~
+<?php
+//sanitizar comentario
+$comment = htmlspecialchars($_POST['comment'], ENT_QUOTES, 'UTF-8');
+if (!empty($comment) && strlen($comment) <= 500) {
+        echo "Comentario publicado: " . $comment;
+} else {
+        echo "Error: El comentario no puede estar vacío y debe tener máximo 500caracteres.";
+}
+?>
+
+<form method="post">
+        <input type="text" name="comment">
+        <button type="submit">Enviar</button>
+</form>
+~~~
+Evita comentarios vacíos o excesivamente largos (500 caracteres).
+
+![](files/xss6.png)
+
+** Protección contra inyecciones HTML y JS (XSS)**
+Si bien htmlspecialchars() mitiga la ejecución de scripts en el navegador, se puede reforzar con strip_tags() si
+solo se quiere texto sin etiquetas HTML:
+`$comment = strip_tags($_POST['comment']);`
+Elimina etiquetas HTML completamente. Útil si no quieres permitir texto enriquecido (bold, italic, etc.).
+
+Si en cambio si se quiere permitir algunas etiquetas (por ejemplo, <b> y <i>), se puede hacer:
+`$comment = strip_tags($_POST['comment'], '<b><i>');`
+
+-
+** Protección contra ataques CSRF**
+Actualmente, cualquiera podría enviar comentarios en el formulario con una solicitud falsa desde otro sitio web.
+Para prevenir esto, se puede generar un token CSRF y verificarlo antes de procesar el comentario.
+En la [proxima actividad sobre ataques CSRF]() lo veremos más detenidamente.
+
+_Generar y almacenar el token en la sesión_
+~~~
+session_start();
+if (!isset($_SESSION['csrf_token'])) {
+$_SESSION['csrf_token'] = bin2hex(random_bytes(32));
+}
+~~~
+
+_Agregar el token al formulario_
+`<input type="hidden" name="csrf_token" value="<?php echo $_SESSION['csrf_token']; ?>">`
+
+_Verificar el token antes de procesar el comentario_
+~~~
+if (!isset($_POST['csrf_token']) || $_POST['csrf_token'] !== $_SESSION['csrf_token'])
+{
+die("Error: Token CSRF inválido.");
+}
+~~~
+Estas modificaciones previenen ataques de falsificación de solicitudes (CSRF).
+Crea el archivo comment4.php con todas las mitigaciones:
+~~~
+<?php
+function filter_string_polyfill(string $string): string
+{
+    // Elimina caracteres nulos y etiquetas HTML
+    $str = preg_replace('/\x00|<[^>]*>?/', '', $string);
+    // Sustituye comillas por entidades HTML
+    return str_replace(["'", '"'], ['&#39;', '&#34;'], $str);
+}
+session_start();
+// Generar token CSRF si no existe
+if (!isset($_SESSION['csrf_token'])) {
+        $_SESSION['csrf_token'] = bin2hex(random_bytes(32));
+}
+if ($_SERVER["REQUEST_METHOD"] == "POST") {
+        // Verificar el token CSRF
+        if (!isset($_POST['csrf_token']) || $_POST['csrf_token'] !==$_SESSION['csrf_token']) {
+                die("Error: Token CSRF inválido.");
+        }// Verificar si el comentario ha sido enviado
+        // Obtener y sanitizar el comentario
+        $comment = filter_string_polyfill($_POST['comment'] ?? ''); // Usamos '??' para manejar el caso de que no se haya enviado ningún comentario
+        $comment = htmlspecialchars($comment, ENT_QUOTES, 'UTF-8');
+    // Validación de longitud y evitar comentarios vacíos.
+    if (!empty($comment) && strlen($comment) <= 500) {
+        echo "Comentario publicado: " . $comment;
+    } else {
+        echo "Error: El comentario no puede estar vacío y debe tener máximo 500 caracteres.";
+    }
+}
+?>
+
+<!DOCTYPE html>
+<html lang="es">
+<head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>Comentarios Seguros</title>
+</head>
+<body>
+        <form method="post">
+                <label for="comment">Escribe tu comentario:</label>
+                <input type="text" name="comment" id="comment" required maxlength="500">
+                <input type="hidden" name="csrf_token" value="<?php echo
+$_SESSION['csrf_token']; ?>">
+                <button type="submit">Enviar</button>
+        </form>
+</body>
+</html>
+~~~
 
 ---
 ## ENTREGA
