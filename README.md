@@ -249,12 +249,13 @@ if (!isset($_POST['csrf_token']) || $_POST['csrf_token'] !== $_SESSION['csrf_tok
 die("Error: Token CSRF inválido.");
 }
 ~~~
+Estas modificaciones previenen ataques de falsificación de solicitudes (CSRF).
 
 ## Código Seguro
 
-Estas modificaciones previenen ataques de falsificación de solicitudes (CSRF).
 
-Crea el archivo comment4.php con todas las mitigaciones:
+Crea el archivo comment4.php con todas las mitigaciones. La mitigaciones con mejoras para evitar CSRF las veremos en la siguiente actividad.
+
 ~~~
 <?php
 function filter_string_polyfill(string $string): string
@@ -304,6 +305,37 @@ $_SESSION['csrf_token']; ?>">
 </body>
 </html>
 ~~~
+
+Aquí está el código securizado:
+
+🔒 Medidas de seguridad implementadas
+
+1. Eliminación de etiquetas HTML y caracteres nulos:
+
+La función filter_string_polyfill() usa preg_replace('/\x00|<[^>]*>?/', '', $string); para eliminar caracteres nulos (\x00) y cualquier etiqueta HTML (<[^>]*>?). Esto reduce la posibilidad de inyección de scripts.
+
+2. Escapado de comillas:
+
+En filter_string_polyfill(), las comillas simples (') y dobles (") se reemplazan por sus equivalentes en entidades HTML (&#39; y &#34;). Esto evita el cierre prematuro de atributos en HTML.
+
+3. Uso de htmlspecialchars:
+
+Después de aplicar filter_string_polyfill(), se vuelve a ejecutar htmlspecialchars($comment, ENT_QUOTES, 'UTF-8');, lo que convierte caracteres especiales en entidades HTML.
+
+	- ENT_QUOTES protege contra XSS al convertir tanto comillas simples como dobles en sus versiones seguras (&#39; y &#34;).
+
+	- UTF-8 previene ataques basados en codificaciones incorrectas.  
+
+4. Validación de longitud y contenido:
+
+Se valida que el comentario no esté vacío y que no supere los 500 caracteres. Aunque esto no previene directamente XSS, ayuda a limitar intentos de ataques masivos.
+
+
+
+
+🚀 Resultado
+
+✔ Código seguro contra **Cross-Site Scripting (XSS)**
 
 ---
 ## ENTREGA
